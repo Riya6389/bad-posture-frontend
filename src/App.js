@@ -10,10 +10,8 @@ function App() {
   const [isWebcam, setIsWebcam] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Your deployed backend URL
   const BACKEND_URL = 'https://bad-posture-backend-production-8f0e.up.railway.app';
 
-  // Handle Video Upload
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -31,14 +29,14 @@ function App() {
     }
 
     const formData = new FormData();
-    formData.append('file', selectedVideo);   // ✅ Correct key: 'file'
+    formData.append('video', selectedVideo);   // ✅ Corrected key: 'video'
 
     try {
       setLoading(true);
       const response = await axios.post(`${BACKEND_URL}/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setResult(response.data.result || 'No feedback received.');
+      setResult(response.data.feedback || 'No feedback received.');  // ✅ Corrected response key
     } catch (error) {
       console.error(error);
       setResult('Error analyzing video.');
@@ -47,12 +45,10 @@ function App() {
     }
   };
 
-  // Handle Webcam Capture & Send to Backend
   const handleWebcamCapture = async () => {
     if (!webcamRef.current) return;
 
     const imageSrc = webcamRef.current.getScreenshot();
-
     if (!imageSrc) {
       alert('Unable to capture image. Please try again.');
       return;
@@ -63,7 +59,7 @@ function App() {
     const file = new File([blob], 'frame.jpg', { type: 'image/jpeg' });
 
     const formData = new FormData();
-    formData.append('file', file);  // ✅ Correct key: 'file'
+    formData.append('file', file);  // ✅ Correct key: 'file' (matches backend for webcam)
 
     try {
       setLoading(true);
