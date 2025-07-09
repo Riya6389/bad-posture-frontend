@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import Webcam from 'react-webcam';
 import axios from 'axios';
 
 function App() {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [videoURL, setVideoURL] = useState('');
   const [result, setResult] = useState('');
+  const webcamRef = useRef(null);
+  const [isWebcam, setIsWebcam] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const BACKEND_URL = 'https://bad-posture-backend-production-8f0e.up.railway.app';
 
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setIsWebcam(false);
       setSelectedVideo(file);
       setVideoURL(URL.createObjectURL(file));
+      setResult('');
     }
   };
 
@@ -24,39 +32,106 @@ function App() {
     formData.append('video', selectedVideo);
 
     try {
-      const response = await axios.post('https://bad-posture-backend-production-8f0e.up.railway.app/', formData, {
+      setLoading(true);
+      const response = await axios.post(`${BACKEND_URL}/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      setResult(response.data.feedback);
+      setResult(response.data.feedback || 'No feedback received.');
     } catch (error) {
       console.error(error);
       setResult('Error analyzing video.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWebcamCapture = async () => {
+    const imageSrc = webcamRef.current.getScreenshot();
+
+    const res = await fetch(imageSrc);
+    const blob = await res.blob();
+    const file = new File([blob], 'frame.jpg', { type: 'image/jpeg' });
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setLoading(true);
+      const response = await axios.post(`${BACKEND_URL}/analyze`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setResult(response.data.result || 'No feedback.');
+    } catch (error) {
+      console.error(error);
+      setResult('Error analyzing posture.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
+    <div style={{ textAlign: 'center', padding: '40px' }}>
       <h1>Posture Detection App</h1>
 
-      <input type="file" accept="video/*" onChange={handleVideoChange} />
+      <div style={{ marginBottom: '20px' }}>
+        <button onClick={() => setIsWebcam(false)} style={{ marginRight: '10px' }}>
+          Upload Video
+        </button>
+        <button onClick={() => {
+          setIsWebcam(true);
+          setVideoURL('');
+          setSelectedVideo(null);
+          setResult('');
+        }}>
+          Use Webcam
+        </button>
+      </div>
 
-      {videoURL && (
-        <div style={{ marginTop: '20px' }}>
-          <video width="400" controls src={videoURL}></video>
-        </div>
+      {!isWebcam && (
+        <>
+          <input type="file" accept="video/*" onChange={handleVideoChange} />
+          {videoURL && (
+            <div style={{ marginTop: '20px' }}>
+              <video width="400" controls src={videoURL}></video>
+            </div>
+          )}
+          <button 
+            onClick={handleUpload}
+            style={{ padding: '10px 20px', fontSize: '16px', marginTop: '20px' }}
+          >
+            Analyze Posture
+          </button>
+        </>
       )}
 
-      <button 
-        onClick={handleUpload} 
-        style={{ padding: '10px 20px', fontSize: '16px', marginTop: '20px' }}
-      >
-        Analyze Posture
-      </button>
+      {isWebcam && (
+        <>
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            width={400}
+            height={300}
+            videoConstraints={{ facingMode: 'user' }}
+          />
+          <br />
+          <button 
+            onClick={handleWebcamCapture}
+            style={{ padding: '10px 20px', fontSize: '16px', marginTop: '20px' }}
+          >
+            Capture & Analyze
+          </button>
+        </>
+      )}
+
+      {loading && <p style={{ marginTop: '20px' }}>Analyzing...</p>}
 
       {result && (
-        <p style={{ marginTop: '20px', fontSize: '18px' }}>{result}</p>
+        <p style={{ marginTop: '20px', fontSize: '18px', fontWeight: 'bold' }}>
+          {result}
+        </p>
       )}
     </div>
   );
