@@ -10,8 +10,10 @@ function App() {
   const [isWebcam, setIsWebcam] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Your deployed backend URL
   const BACKEND_URL = 'https://bad-posture-backend-production-8f0e.up.railway.app';
 
+  // Handle Video Upload
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -29,16 +31,14 @@ function App() {
     }
 
     const formData = new FormData();
-    formData.append('video', selectedVideo);
+    formData.append('file', selectedVideo);   // ✅ Correct key: 'file'
 
     try {
       setLoading(true);
-      const response = await axios.post(`${BACKEND_URL}/`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const response = await axios.post(`${BACKEND_URL}/analyze`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setResult(response.data.feedback || 'No feedback received.');
+      setResult(response.data.result || 'No feedback received.');
     } catch (error) {
       console.error(error);
       setResult('Error analyzing video.');
@@ -47,15 +47,23 @@ function App() {
     }
   };
 
+  // Handle Webcam Capture & Send to Backend
   const handleWebcamCapture = async () => {
+    if (!webcamRef.current) return;
+
     const imageSrc = webcamRef.current.getScreenshot();
+
+    if (!imageSrc) {
+      alert('Unable to capture image. Please try again.');
+      return;
+    }
 
     const res = await fetch(imageSrc);
     const blob = await res.blob();
     const file = new File([blob], 'frame.jpg', { type: 'image/jpeg' });
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', file);  // ✅ Correct key: 'file'
 
     try {
       setLoading(true);
@@ -76,15 +84,26 @@ function App() {
       <h1>Posture Detection App</h1>
 
       <div style={{ marginBottom: '20px' }}>
-        <button onClick={() => setIsWebcam(false)} style={{ marginRight: '10px' }}>
+        <button
+          onClick={() => {
+            setIsWebcam(false);
+            setSelectedVideo(null);
+            setVideoURL('');
+            setResult('');
+          }}
+          style={{ marginRight: '10px' }}
+        >
           Upload Video
         </button>
-        <button onClick={() => {
-          setIsWebcam(true);
-          setVideoURL('');
-          setSelectedVideo(null);
-          setResult('');
-        }}>
+
+        <button
+          onClick={() => {
+            setIsWebcam(true);
+            setSelectedVideo(null);
+            setVideoURL('');
+            setResult('');
+          }}
+        >
           Use Webcam
         </button>
       </div>
@@ -97,7 +116,7 @@ function App() {
               <video width="400" controls src={videoURL}></video>
             </div>
           )}
-          <button 
+          <button
             onClick={handleUpload}
             style={{ padding: '10px 20px', fontSize: '16px', marginTop: '20px' }}
           >
@@ -117,7 +136,7 @@ function App() {
             videoConstraints={{ facingMode: 'user' }}
           />
           <br />
-          <button 
+          <button
             onClick={handleWebcamCapture}
             style={{ padding: '10px 20px', fontSize: '16px', marginTop: '20px' }}
           >
