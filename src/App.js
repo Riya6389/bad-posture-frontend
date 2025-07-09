@@ -32,7 +32,8 @@ function App() {
     }
 
     const formData = new FormData();
-    formData.append('file', selectedVideo);  // ✅ Correct key
+   if 'file' in request.files:
+ // ✅ Correct key
 
     try {
       setLoading(true);
