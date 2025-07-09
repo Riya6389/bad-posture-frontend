@@ -32,7 +32,7 @@ function App() {
     }
 
     const formData = new FormData();
-   if 'file' in request.files:
+    formData.append('video', selectedVideo);
  // ✅ Correct key
 
     try {
