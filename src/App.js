@@ -10,10 +10,8 @@ function App() {
   const [isWebcam, setIsWebcam] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Your deployed backend URL (no slash at end)
   const BACKEND_URL = 'https://bad-posture-backend-production-8f0e.up.railway.app';
 
-  // ✅ Handle video selection
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -24,7 +22,6 @@ function App() {
     }
   };
 
-  // ✅ Handle video upload to backend
   const handleUpload = async () => {
     if (!selectedVideo) {
       alert('Please select a video first.');
@@ -32,8 +29,7 @@ function App() {
     }
 
     const formData = new FormData();
-    formData.append('video', selectedVideo);
- // ✅ Correct key
+    formData.append('file', selectedVideo);   // ✅ Correct key is 'file'
 
     try {
       setLoading(true);
@@ -49,12 +45,10 @@ function App() {
     }
   };
 
-  // ✅ Handle webcam capture and upload
   const handleWebcamCapture = async () => {
     if (!webcamRef.current) return;
 
     const imageSrc = webcamRef.current.getScreenshot();
-
     if (!imageSrc) {
       alert('Unable to capture image. Please try again.');
       return;
@@ -65,7 +59,7 @@ function App() {
     const file = new File([blob], 'frame.jpg', { type: 'image/jpeg' });
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', file);  // ✅ Correct key is 'file'
 
     try {
       setLoading(true);
